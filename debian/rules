@@ -1,4 +1,15 @@
 #!/usr/bin/make -f
 
+# Don't build binaries or examples and skip a test that expects Open vSwitch/docker to be available
+export DH_GOLANG_EXCLUDES := cmd/ example/ test/ovs
+
 %:
-	dh $@
+	dh $@ --builddirectory=_build --buildsystem=golang --with=golang
+
+# This is kind of hacky... modelgen/table_test.go depends on codegen from the examples, which in turn
+# depend on the modelgen binary that we don't build. Rather than trying to figure out some way to get
+# it to work, just don't package that file. (I couldn't figure out a nice way to add just the file to
+# DH_GOLANG_EXCLUDES, so manually remove it prior to the build.)
+override_dh_auto_configure:
+	dh_auto_configure
+	rm _build/src/github.com/ovn-org/libovsdb/modelgen/table_test.go
